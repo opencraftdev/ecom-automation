@@ -1,46 +1,49 @@
 # ecom-automation
 
-SaaS untuk seller Shopee: pantau performa iklan, review katalog produk berdasarkan data iklan, dan tanya AI marketing yang menjawab dari e-book digital marketing + data toko sendiri.
+Multi-tenant SaaS for Shopee sellers: ads performance (ROAS, spend), catalogue reviewer driven by ads data, and an AI marketing chat grounded in digital-marketing e-books (RAG) plus the seller's own ads numbers.
 
-## Apa yang dibangun
+App UI language: **Bahasa Indonesia**. Code, docs, and agent records: English.
 
-| Fitur | Isi | Sumber data |
-|---|---|---|
-| Ads dashboard | ROAS, spend, revenue, CTR per campaign dan per hari | Shopee Ads API (mock dulu) |
-| Catalogue reviewer | Skor tiap produk dari performa iklannya: turunkan budget, naikkan, perbaiki listing | Shopee Ads + Product API (mock dulu) |
-| AI marketing chat | Chat dengan AI. Jawaban di-ground ke e-book digital marketing (RAG) dan angka iklan toko user | pgvector + Claude |
-| Multi-tenant | Seller daftar, connect toko Shopee sendiri, data terpisah per tenant | Supabase Auth + RLS |
+Stack: Vite + React + TypeScript, Tailwind, shadcn/ui · Supabase (Postgres, Auth, RLS, Edge Functions, pgvector) · Claude API · Shopee Open Platform Ads API.
 
-## Stack
+## Owner checklist
 
-- Frontend: Vite + React + TypeScript, Tailwind, shadcn/ui
-- Backend: Supabase (Postgres, Auth, RLS, Edge Functions, pgvector)
-- AI: Claude API untuk chat, embeddings untuk RAG
-- Shopee: Open Platform Ads API, dipanggil dari Edge Functions agar partner key tidak pernah sampai ke browser
+### Phase 1 — UI demo with mock data (now)
+- [ ] Run `/build scaffold Vite React app with dashboard layout and mock ROAS data` to start
+- [ ] Review the demo screens: ads dashboard, catalogue reviewer, chat shell
+- [ ] Decide product name, logo, and primary color for the UI
+- [ ] Write the Indonesian copy you want for empty states and onboarding (or approve agent drafts)
 
-## Fase
+### Shopee access (in progress, parallel to Phase 1)
+- [ ] Finish Shopee Open Platform registration
+- [ ] Request Ads API + Product API scopes
+- [ ] Receive `partner_id` and `partner_key`
+- [ ] Store both in Supabase secrets, never in the repo or frontend `.env`
 
-1. **UI demo dengan mock data** ← sekarang. Semua layar jalan pakai data palsu yang bentuknya sama dengan response Shopee. Tujuan: bisa didemokan sebelum partner_id keluar.
-2. **Supabase + Auth + multi-tenant.** Login, tabel per tenant, RLS.
-3. **RAG chat.** Ingest e-book (PDF) → chunk → embed → pgvector. Chat menjawab dengan sitasi bab e-book.
-4. **Shopee live.** Ganti mock dengan Edge Function yang memanggil Ads API. OAuth per seller.
-5. **Catalogue reviewer.** Aturan skor produk dari data iklan nyata.
+### Phase 2 — Supabase, auth, multi-tenant
+- [ ] Create the Supabase project, put URL + anon key in `.env`
+- [ ] Decide pricing tiers: number of shops, chats per month
+- [ ] Approve the tenant/RLS schema before migration
 
-## Yang harus kamu (owner) lakukan
+### Phase 3 — RAG chat
+- [ ] Collect the digital-marketing e-books as PDF, drop them in `rag/sources/` (gitignored)
+- [ ] Mark which e-books may be quoted to users and which are internal only
+- [ ] Approve the chat answer style (length, citation format, Indonesian tone)
 
-- Selesaikan registrasi Shopee Open Platform, minta akses Ads API. Simpan `partner_id` + `partner_key` di Supabase secrets, bukan di repo.
-- Siapkan e-book digital marketing dalam PDF, taruh di `rag/sources/` (di-gitignore). Sebutkan mana yang boleh dikutip ke user.
-- Tentukan harga dan batas tier (jumlah toko, jumlah chat per bulan) sebelum fase 2.
-- Buat project Supabase, kasih URL + anon key ke `.env`.
+### Phase 4 — Shopee live
+- [ ] Connect one real shop via Shopee OAuth and compare live numbers against mocks
+- [ ] Sign off the swap from `src/mocks/` to Edge Functions
 
-## Cara kerja dengan agent di repo ini
+### Phase 5 — Catalogue reviewer
+- [ ] Define the scoring rules: when to cut budget, raise budget, fix listing
+- [ ] Validate scores against 10 real products before release
 
-- `/build <task>` menjalankan tim agent: plan → workers paralel → audit → ringkasan. Detail di `.claude/`.
-- Sebelum tugas apa pun agent menjalankan `scripts/prerun.sh <keyword>` untuk baca kode via CodeGraph dan keputusan lama di `docs/decisions/`.
-- `docs/logs/` dan `docs/decisions/` ditulis agent, untuk agent. Jangan diedit manual.
+## Working with agents here
+- `/build <task>` runs plan → parallel workers → audit → summary. Details in `.claude/`.
+- Agents run `scripts/prerun.sh <keywords>` before any task (CodeGraph + prior decisions).
+- `docs/logs/` and `docs/decisions/` are written by agents, for agents. Do not edit by hand.
 
-## Menjalankan
-
+## Run
 ```bash
 npm install
 npm run dev

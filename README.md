@@ -9,6 +9,7 @@ Stack: Vite + React + TypeScript, Tailwind, shadcn/ui · Supabase (Postgres, Aut
 ## Owner checklist
 
 ### Phase 1 — UI demo with mock data (now)
+- [ ] Read `docs/plan/phase-1-ui-demo.md`, then collect UI references per its reference brief
 - [ ] Run `/build scaffold Vite React app with dashboard layout and mock ROAS data` to start
 - [ ] Review the demo screens: ads dashboard, catalogue reviewer, chat shell
 - [ ] Decide product name, logo, and primary color for the UI

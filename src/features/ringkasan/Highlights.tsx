@@ -1,22 +1,29 @@
-import { AlertTriangle, MessageCircle, Sparkles, TrendingUp, Wallet } from "lucide-react"
+import { MessageCircle, Sparkles } from "lucide-react"
 import { Link } from "react-router"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatPercent, formatRoas, formatRupiah } from "@/lib/format"
+import { cn } from "@/lib/utils"
+import { formatPercent, formatRoas, formatRupiahCompact } from "@/lib/format"
 import { useAdList, usePerformance, type DateRange } from "@/api/ads"
 
 interface HighlightsProps {
   range: DateRange
 }
 
-interface Row {
-  icon: typeof TrendingUp
-  text: string
+interface Stat {
+  label: string
+  value: string
+  delta: number | null // fraction; null = no comparison
 }
 
-// F2.3: three rule-based sentences bridging Ringkasan to the AI consultant —
-// reuses usePerformance/useAdList, no new rules beyond what those hooks expose.
+interface Summary {
+  headline: string
+  stats: Stat[]
+}
+
+// F2.3: one plain-language headline plus three compact numbers, bridging
+// Ringkasan to the AI consultant. Reuses usePerformance/useAdList only.
 export function Highlights({ range }: HighlightsProps) {
   const performance = usePerformance(range)
   const actionAds = useAdList({
@@ -33,30 +40,24 @@ export function Highlights({ range }: HighlightsProps) {
   const isPending = performance.isPending || actionAds.isPending
   const isError = performance.isError || actionAds.isError
 
-  const rows: Row[] | null =
+  const summary: Summary | null =
     performance.data && actionAds.data
       ? (() => {
           const { metrics, deltas } = performance.data
-          const roasDirection = deltas.roas >= 0 ? "naik" : "turun"
-          const profitDirection = deltas.profit >= 0 ? "naik" : "turun"
-          const { total, rows: actionRows } = actionAds.data
-          return [
-            {
-              icon: TrendingUp,
-              text: `ROAS ${roasDirection} ${formatPercent(Math.abs(deltas.roas))} dari periode sebelumnya, kini ${formatRoas(metrics.roas)}.`,
-            },
-            {
-              icon: AlertTriangle,
-              text:
-                total > 0
-                  ? `${total} iklan perlu tindakan: ${actionRows.slice(0, 2).map((r) => r.ad_name).join(", ")}.`
-                  : "Semua iklan sehat, tidak ada yang perlu tindakan.",
-            },
-            {
-              icon: Wallet,
-              text: `Laba iklan ${formatRupiah(metrics.profit)}, ${profitDirection} ${formatPercent(Math.abs(deltas.profit))} dari periode sebelumnya.`,
-            },
-          ]
+          const { total } = actionAds.data
+          const roasWord = deltas.roas >= 0 ? "naik" : "turun"
+          const headline =
+            total > 0
+              ? `${total} iklan perlu tindakan. ROAS ${roasWord} ${formatPercent(Math.abs(deltas.roas))} dari periode sebelumnya.`
+              : `Semua iklan sehat. ROAS ${roasWord} ${formatPercent(Math.abs(deltas.roas))} dari periode sebelumnya.`
+          return {
+            headline,
+            stats: [
+              { label: "ROAS", value: formatRoas(metrics.roas), delta: deltas.roas },
+              { label: "Laba iklan", value: formatRupiahCompact(metrics.profit), delta: deltas.profit },
+              { label: "Perlu tindakan", value: `${total} iklan`, delta: null },
+            ],
+          }
         })()
       : null
 
@@ -65,53 +66,46 @@ export function Highlights({ range }: HighlightsProps) {
       aria-label="Sorotan AI"
       className="relative overflow-hidden rounded-xl bg-[linear-gradient(120deg,var(--hero-from),var(--hero-via)_55%,var(--hero-to))] shadow-(--shadow-card)"
     >
-      {/* decorative blobs, brand hues only */}
       <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 size-56 rounded-full bg-brand/15 blur-2xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-20 right-64 size-48 rounded-full bg-brand-2/20 blur-2xl" />
 
-      <div className="relative flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:gap-6">
-        {/* logo + title */}
-        <div className="flex shrink-0 items-center gap-3 lg:w-56">
-          <span className="relative flex size-12 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,var(--brand),var(--brand-2))] text-white shadow-[0_10px_24px_-10px_var(--brand)]">
-            <Sparkles className="size-6" />
-            <span className="absolute -right-1.5 -bottom-1.5 rounded-full bg-card px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand shadow-(--shadow-card)">
-              AI
-            </span>
+      <div className="relative flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:gap-6">
+        <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,var(--brand),var(--brand-2))] text-white shadow-[0_10px_24px_-10px_var(--brand)]">
+          <Sparkles className="size-6" />
+          <span className="absolute -right-1.5 -bottom-1.5 rounded-full bg-card px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand shadow-(--shadow-card)">
+            AI
           </span>
-          <div className="flex flex-col">
-            <h2 className="text-lg font-semibold leading-tight">Sorotan AI</h2>
-            <p className="text-xs text-muted-foreground">Dirangkum dari data iklanmu</p>
-          </div>
-        </div>
+        </span>
 
-        {/* insight chips */}
-        <div className="grid flex-1 gap-3 md:grid-cols-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           {isError ? (
             <p className="text-sm text-danger">Gagal memuat sorotan.</p>
-          ) : isPending || !rows ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-lg bg-card/70 p-3">
-                <Skeleton className="size-8 shrink-0 rounded-full" />
-                <div className="flex flex-1 flex-col gap-2 pt-1">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-2/3" />
-                </div>
-              </div>
-            ))
+          ) : isPending || !summary ? (
+            <>
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-3.5 w-1/2" />
+            </>
           ) : (
-            rows.map((row, i) => (
-              <div key={i} className="flex items-start gap-3 rounded-lg bg-card/80 p-3 backdrop-blur-sm">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-tint text-brand">
-                  <row.icon className="size-4" />
-                </span>
-                <p className="text-sm leading-snug text-foreground">{row.text}</p>
-              </div>
-            ))
+            <>
+              <p className="text-base font-semibold leading-snug">{summary.headline}</p>
+              <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                {summary.stats.map((stat, i) => (
+                  <span key={stat.label} className="flex items-center gap-1.5">
+                    {i > 0 && <span aria-hidden className="text-border">•</span>}
+                    <span>{stat.label}</span>
+                    <span className="font-medium text-foreground tabular-nums">{stat.value}</span>
+                    {stat.delta !== null && (
+                      <span className={cn("text-xs tabular-nums", stat.delta >= 0 ? "text-success" : "text-danger")}>
+                        {stat.delta >= 0 ? "▲" : "▼"} {formatPercent(Math.abs(stat.delta))}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </p>
+            </>
           )}
         </div>
 
-        {/* CTA */}
-        <div className="shrink-0 lg:pl-2">
+        <div className="shrink-0">
           <Button size="lg" nativeButton={false} render={<Link to="/chat" />}>
             <MessageCircle data-icon="inline-start" />
             Bahas dengan Konsultan AI

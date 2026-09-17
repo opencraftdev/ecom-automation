@@ -1,4 +1,4 @@
-import { MessageCircle, Sparkles } from "lucide-react"
+import { MessageCircle } from "lucide-react"
 import { Link } from "react-router"
 
 import { Button } from "@/components/ui/button"
@@ -69,12 +69,14 @@ export function Highlights({ range }: HighlightsProps) {
       <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 size-56 rounded-full bg-brand/15 blur-2xl" />
 
       <div className="relative flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:gap-6">
-        <span className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,var(--brand),var(--brand-2))] text-white shadow-[0_10px_24px_-10px_var(--brand)]">
-          <Sparkles className="size-6" />
-          <span className="absolute -right-1.5 -bottom-1.5 rounded-full bg-card px-1.5 py-0.5 text-[10px] font-bold leading-none text-brand shadow-(--shadow-card)">
-            AI
-          </span>
-        </span>
+        <img
+          src="/ai-logo.png"
+          alt=""
+          aria-hidden
+          width={64}
+          height={64}
+          className="size-16 shrink-0 -my-2 drop-shadow-[0_10px_20px_rgba(238,77,45,0.35)]"
+        />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           {isError ? (

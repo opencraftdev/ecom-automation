@@ -8,6 +8,8 @@ Stack: Vite + React + TypeScript, Tailwind, shadcn/ui · Supabase (Postgres, Aut
 
 ## Owner checklist
 
+Feature map: `docs/plan/features.md` (IDs F1–F6, phase and status per feature).
+
 ### Phase 1 — UI demo with mock data (now)
 - [x] Read `docs/plan/phase-1-ui-demo.md`, then collect UI references per its reference brief (2 refs in `docs/plan/refs/`, design spec written)
 - [ ] Run `/build scaffold Vite React app with dashboard layout and mock ROAS data` to start
@@ -22,6 +24,7 @@ Stack: Vite + React + TypeScript, Tailwind, shadcn/ui · Supabase (Postgres, Aut
 - [ ] Store both in Supabase secrets, never in the repo or frontend `.env`
 
 ### Phase 2 — Supabase, auth, multi-tenant
+- [ ] Pick Midtrans vs Xendit (fees, QRIS/VA support, webhook)
 - [ ] Create the Supabase project, put URL + anon key in `.env`
 - [ ] Decide pricing tiers: number of shops, chats per month
 - [ ] Approve the tenant/RLS schema before migration
@@ -32,6 +35,7 @@ Stack: Vite + React + TypeScript, Tailwind, shadcn/ui · Supabase (Postgres, Aut
 - [ ] Approve the chat answer style (length, citation format, Indonesian tone)
 
 ### Phase 4 — Shopee live
+- [ ] Pick WhatsApp provider for alerts (Fonnte or WA Business API) and set up Resend for email
 - [ ] Connect one real shop via Shopee OAuth and compare live numbers against mocks
 - [ ] Sign off the swap from `src/mocks/` to Edge Functions
 

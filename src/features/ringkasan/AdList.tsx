@@ -27,6 +27,9 @@ type AdTypeFilter = AdListParams["adType"]
 
 const DEFAULT_PAGE_SIZE = 20
 
+// A filter that is narrowing the list reads orange, like an active tab.
+const FILLED = "border-brand bg-brand-tint text-brand hover:border-brand"
+
 const STATUS_ITEMS: Record<StatusFilter, string> = {
   all: "Semua Status",
   scheduled: "Terjadwal",
@@ -126,7 +129,7 @@ export function AdList({ range }: AdListProps) {
             {data && <span className="text-sm text-muted-foreground tabular-nums">{data.total} iklan</span>}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <InputGroup className="w-56">
+            <InputGroup className={cn("w-56", search && FILLED)}>
               <InputGroupInput
                 placeholder="Cari iklan"
                 value={search}
@@ -135,7 +138,7 @@ export function AdList({ range }: AdListProps) {
               <InputGroupAddon><Search /></InputGroupAddon>
             </InputGroup>
             <Select items={AD_TYPE_ITEMS} value={adType} onValueChange={(v) => { setAdType(v as AdTypeFilter); resetPage() }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className={cn(adType !== "all" && FILLED)}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {Object.entries(AD_TYPE_ITEMS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
@@ -143,7 +146,7 @@ export function AdList({ range }: AdListProps) {
               </SelectContent>
             </Select>
             <Select items={STATUS_ITEMS} value={status} onValueChange={(v) => { setStatus(v as StatusFilter); resetPage() }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger className={cn(status !== "all" && FILLED)}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {Object.entries(STATUS_ITEMS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}

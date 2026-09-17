@@ -254,8 +254,12 @@ function buildHourlyRows(): ShopeeAdHourlyPerformance[] {
     const weights = Array.from({ length: 24 }, (_, hour) => hourWeight(weekday, hour));
 
     const impressionByHour = splitByWeights(day.impression, weights);
-    const clicksByHour = splitByWeights(day.clicks, weights);
-    const expenseByHour = splitByWeights(day.expense, weights);
+    // CTR climbs in the evening and CPC rises in peak hours, so clicks and
+    // spend get their own hourly shapes instead of tracing impressions.
+    const clickWeights = weights.map((w, hour) => w * (hour >= 18 && hour <= 22 ? 1.3 : hour >= 7 && hour <= 10 ? 0.8 : 1));
+    const spendWeights = clickWeights.map((w, hour) => w * (hour >= 11 && hour <= 14 ? 1.25 : hour >= 0 && hour <= 6 ? 0.7 : 1));
+    const clicksByHour = splitByWeights(day.clicks, clickWeights);
+    const expenseByHour = splitByWeights(day.expense, spendWeights);
     const convWeights = Array.from({ length: 24 }, (_, hour) => convWeight(weekday, hour));
     const gmvByHour = splitByWeights(day.broad_gmv, convWeights);
     const orderByHour = splitByWeights(day.broad_order, convWeights);

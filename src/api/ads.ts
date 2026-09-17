@@ -99,6 +99,7 @@ export interface PerformanceMetrics {
   gmv: number
   expense: number
   roas: number
+  profit: number // gmv - expense (gross ad profit)
 }
 
 export interface Performance {
@@ -113,7 +114,10 @@ export interface HourlyPoint {
   clicks: number
   itemsSold: number
   gmv: number
+  expense: number
 }
+
+export type AdVerdict = 'scale_up' | 'hold' | 'scale_down' | 'fix_listing'
 
 export interface AdListRow extends ShopeeAdCampaign {
   clicks: number
@@ -121,13 +125,20 @@ export interface AdListRow extends ShopeeAdCampaign {
   addToCart: number
   addToCartDelta: number | null
   expense: number
+  expenseDelta: number | null
   gmv: number
+  gmvDelta: number | null
   roas: number
+  roasDelta: number | null
+  profit: number
+  ctr: number
+  verdict: AdVerdict
+  verdictReason: string
 }
 
 export interface AdListParams {
   range: DateRange
-  tab: 'manual' | 'auto'
+  tab: 'all' | 'action' | 'healthy' // action = scale_down|fix_listing, healthy = scale_up|hold
   status: 'all' | DailyPerformance['status']
   search: string
   adType: 'all' | DailyPerformance['ad_type']
@@ -341,6 +352,7 @@ function computePerformance(range: DateRange): Performance {
     gmv: agg.gmv,
     expense: agg.expense,
     roas: agg.roas,
+    profit: agg.gmv - agg.expense,
   })
 
   const metrics = toMetrics(aggregate(inRange(dailyPerformance, range)))
@@ -362,6 +374,7 @@ function computeHourlySeries(range: DateRange): HourlyPoint[] {
     clicks: 0,
     itemsSold: 0,
     gmv: 0,
+    expense: 0,
   }))
 
   for (const row of shopeeAdsHourly) {
@@ -370,6 +383,7 @@ function computeHourlySeries(range: DateRange): HourlyPoint[] {
     point.impressions += row.impression
     point.clicks += row.clicks
     point.gmv += row.broad_gmv
+    point.expense += row.expense
     orders[row.hour] += row.broad_order
   }
   points.forEach((point, hour) => {
@@ -390,10 +404,23 @@ const AD_LIST_STATUS_ORDER: Record<DailyPerformance['status'], number> = {
 function campaignRangeAgg(campaignId: string, range: DateRange) {
   const rows = inRange(dailyPerformance, range).filter((r) => r.campaign_id === campaignId)
   const clicks = sum(rows.map((r) => r.clicks))
+  const impression = sum(rows.map((r) => r.impression))
   const addToCart = sum(rows.map((r) => r.add_to_cart))
   const expense = sum(rows.map((r) => r.expense))
   const gmv = sum(rows.map((r) => r.broad_gmv))
-  return { clicks, addToCart, expense, gmv, roas: expense > 0 ? gmv / expense : 0 }
+  return { clicks, addToCart, expense, gmv, roas: expense > 0 ? gmv / expense : 0, ctr: impression > 0 ? clicks / impression : 0 }
+}
+
+// F2.2 verdict rules (phase-1 plan): applied per campaign over the selected range.
+function verdictFor(agg: ReturnType<typeof campaignRangeAgg>, spendMedian: number): { verdict: AdVerdict; verdictReason: string } {
+  if (agg.expense === 0) return { verdict: 'hold', verdictReason: 'Belum ada pengeluaran pada periode ini.' }
+  if (agg.roas < 1.5 && agg.expense > spendMedian)
+    return { verdict: 'scale_down', verdictReason: `ROAS ${agg.roas.toFixed(1).replace('.', ',')}x dengan biaya di atas median. Turunkan modal atau jeda.` }
+  if (agg.ctr < 0.008)
+    return { verdict: 'fix_listing', verdictReason: `CTR ${(agg.ctr * 100).toFixed(2).replace('.', ',')}% rendah. Perbaiki foto, judul, atau harga.` }
+  if (agg.roas > 4)
+    return { verdict: 'scale_up', verdictReason: `ROAS ${agg.roas.toFixed(1).replace('.', ',')}x. Tambah modal untuk mengejar volume.` }
+  return { verdict: 'hold', verdictReason: 'Performa stabil. Pertahankan pengaturan saat ini.' }
 }
 
 function computeAdList(params: AdListParams): AdListResult {
@@ -401,15 +428,14 @@ function computeAdList(params: AdListParams): AdListResult {
   const prev = previousRange(range)
   const searchLower = search.trim().toLowerCase()
 
-  let campaigns = shopeeAdCampaigns.filter((c) =>
-    tab === 'auto' ? c.bidding_mode === 'gmv_max_auto' : c.bidding_mode !== 'gmv_max_auto',
-  )
+  let campaigns = [...shopeeAdCampaigns]
   if (status !== 'all') campaigns = campaigns.filter((c) => c.status === status)
   if (adType !== 'all') campaigns = campaigns.filter((c) => c.ad_type === adType)
   if (diagnosis !== 'all') campaigns = campaigns.filter((c) => c.diagnosis === diagnosis)
   if (searchLower) campaigns = campaigns.filter((c) => c.ad_name.toLowerCase().includes(searchLower))
 
-  const rows: AdListRow[] = campaigns.map((c) => {
+  const spendMedian = median(shopeeAdCampaigns.map((c) => campaignRangeAgg(c.campaign_id, range).expense).filter((e) => e > 0))
+  let rows: AdListRow[] = campaigns.map((c) => {
     const current = campaignRangeAgg(c.campaign_id, range)
     const previousAgg = campaignRangeAgg(c.campaign_id, prev)
     return {
@@ -419,10 +445,18 @@ function computeAdList(params: AdListParams): AdListResult {
       addToCart: current.addToCart,
       addToCartDelta: deltaOrNull(current.addToCart, previousAgg.addToCart),
       expense: current.expense,
+      expenseDelta: deltaOrNull(current.expense, previousAgg.expense),
       gmv: current.gmv,
+      gmvDelta: deltaOrNull(current.gmv, previousAgg.gmv),
       roas: current.roas,
+      roasDelta: deltaOrNull(current.roas, previousAgg.roas),
+      profit: current.gmv - current.expense,
+      ctr: current.ctr,
+      ...verdictFor(current, spendMedian),
     }
   })
+  if (tab === 'action') rows = rows.filter((r) => r.verdict === 'scale_down' || r.verdict === 'fix_listing')
+  if (tab === 'healthy') rows = rows.filter((r) => r.verdict === 'scale_up' || r.verdict === 'hold')
 
   rows.sort((a, b) => {
     const statusDiff = AD_LIST_STATUS_ORDER[a.status] - AD_LIST_STATUS_ORDER[b.status]

@@ -21,31 +21,31 @@ interface HourlyChartProps {
   selected: MetricKey[]
 }
 
-// useHourlySeries only carries these four fields; PerformanceCards already
-// restricts `selected` to this set, this just narrows the type here too.
-type HourlyMetric = "impressions" | "clicks" | "itemsSold" | "gmv"
+// PerformanceCards restricts `selected` to this same set, this just narrows
+// the type here too. Matches PerformanceCards' series-color assignment.
+type HourlyMetric = "gmv" | "expense" | "clicks" | "impressions"
 
-const HOURLY_METRICS: HourlyMetric[] = ["impressions", "clicks", "itemsSold", "gmv"]
+const HOURLY_METRICS: HourlyMetric[] = ["gmv", "expense", "clicks", "impressions"]
 
 const METRIC_LABEL: Record<HourlyMetric, string> = {
-  impressions: "Iklan Dilihat",
-  clicks: "Jumlah Klik",
-  itemsSold: "Produk Terjual",
   gmv: "Penjualan",
+  expense: "Biaya Iklan",
+  clicks: "Klik",
+  impressions: "Iklan Dilihat",
 }
 
 const METRIC_FORMAT: Record<HourlyMetric, (value: number) => string> = {
-  impressions: formatNumber,
-  clicks: formatNumber,
-  itemsSold: formatNumber,
   gmv: formatRupiah,
+  expense: formatRupiah,
+  clicks: formatNumber,
+  impressions: formatNumber,
 }
 
 const chartConfig = {
-  impressions: { label: METRIC_LABEL.impressions, color: "var(--series-1)" },
-  clicks: { label: METRIC_LABEL.clicks, color: "var(--series-2)" },
-  itemsSold: { label: METRIC_LABEL.itemsSold, color: "var(--series-3)" },
   gmv: { label: METRIC_LABEL.gmv, color: "var(--series-4)" },
+  expense: { label: METRIC_LABEL.expense, color: "var(--series-2)" },
+  clicks: { label: METRIC_LABEL.clicks, color: "var(--series-1)" },
+  impressions: { label: METRIC_LABEL.impressions, color: "var(--series-3)" },
 } satisfies ChartConfig
 
 // Each metric normalized to its own 0-1 scale (min-max across the 24 hours)
@@ -99,8 +99,9 @@ export function HourlyChart({ range, selected }: HourlyChartProps) {
   }
 
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-[220px] w-full">
-      <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8 }}>
+    <div className="flex flex-col gap-2">
+      <ChartContainer config={chartConfig} className="aspect-auto h-[220px] w-full">
+        <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8 }}>
         <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={2} padding={{ left: 12, right: 12 }} />
         <YAxis hide domain={[0, 1]} />
         <ChartTooltip
@@ -138,6 +139,8 @@ export function HourlyChart({ range, selected }: HourlyChartProps) {
         ))}
         <ChartLegend verticalAlign="top" align="right" content={<ChartLegendContent nameKey="value" />} />
       </LineChart>
-    </ChartContainer>
+      </ChartContainer>
+      <p className="text-xs text-muted-foreground">Setiap garis dinormalisasi ke skalanya sendiri</p>
+    </div>
   )
 }

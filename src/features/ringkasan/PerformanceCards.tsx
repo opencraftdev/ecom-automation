@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { formatNumber, formatNumberCompact, formatPercent, formatRupiah } from "@/lib/format"
+import { formatNumber, formatNumberCompact, formatPercent, formatRoas, formatRupiah } from "@/lib/format"
 import { usePerformance, type DateRange, type PerformanceMetrics } from "@/api/ads"
 
 export type MetricKey = keyof PerformanceMetrics
@@ -15,13 +15,6 @@ interface PerformanceCardsProps {
   selected: MetricKey[]
   onToggle: (key: MetricKey) => void
 }
-
-// ROAS here reads "15,12" (2 decimals, no "x") per the Shopee reference —
-// formatRoas in lib/format is 1 decimal with a trailing "x", used elsewhere.
-const roasValueFormatter = new Intl.NumberFormat("id-ID", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
 
 type Series = 1 | 2 | 3 | 4
 
@@ -40,17 +33,20 @@ interface MetricConfig {
   description: string
   format: (value: number) => string
   series?: Series
+  valueClassName?: (value: number) => string | undefined
 }
 
+const negativeRed = (value: number) => (value < 0 ? "text-danger" : undefined)
+
 const METRICS: MetricConfig[] = [
-  { key: "impressions", label: "Iklan Dilihat", description: "Jumlah tayangan iklan produk kepada calon pembeli.", format: formatNumberCompact, series: 1 },
-  { key: "clicks", label: "Jumlah Klik", description: "Jumlah klik yang diterima iklan pada periode ini.", format: formatNumberCompact, series: 2 },
+  { key: "roas", label: "ROAS", description: "Return on Ad Spend: penjualan dibagi biaya iklan.", format: formatRoas },
+  { key: "profit", label: "Laba Iklan", description: "Penjualan dikurangi biaya iklan pada periode ini.", format: formatRupiah, valueClassName: negativeRed },
+  { key: "expense", label: "Biaya Iklan", description: "Total biaya yang dikeluarkan untuk iklan pada periode ini.", format: formatRupiah, series: 2 },
+  { key: "gmv", label: "Penjualan", description: "Total nilai penjualan (GMV) yang dihasilkan iklan.", format: formatRupiah, series: 4 },
+  { key: "impressions", label: "Iklan Dilihat", description: "Jumlah tayangan iklan produk kepada calon pembeli.", format: formatNumberCompact, series: 3 },
+  { key: "clicks", label: "Klik", description: "Jumlah klik yang diterima iklan pada periode ini.", format: formatNumberCompact, series: 1 },
   { key: "ctr", label: "Persentase Klik", description: "Persentase klik dibanding jumlah tayangan iklan (CTR).", format: formatPercent },
   { key: "orders", label: "Pesanan", description: "Jumlah pesanan yang dihasilkan dari iklan.", format: formatNumber },
-  { key: "itemsSold", label: "Produk Terjual", description: "Jumlah produk yang terjual dari iklan.", format: formatNumber, series: 3 },
-  { key: "gmv", label: "Penjualan", description: "Total nilai penjualan (GMV) yang dihasilkan iklan.", format: formatRupiah, series: 4 },
-  { key: "expense", label: "Biaya Iklan", description: "Total biaya yang dikeluarkan untuk iklan pada periode ini.", format: formatRupiah },
-  { key: "roas", label: "ROAS", description: "Return on Ad Spend: penjualan dibagi biaya iklan.", format: (v) => roasValueFormatter.format(v) },
 ]
 
 function DeltaLine({ delta }: { delta: number }) {
@@ -62,9 +58,9 @@ function DeltaLine({ delta }: { delta: number }) {
   )
 }
 
-// F1.8: 2x4 Performa metric grid mirroring Shopee Ads Manager. Four metrics
-// (impressions/clicks/itemsSold/gmv) double as the HourlyChart's series
-// toggles — selecting one tints its card with that series' color.
+// F1.8: 2x4 Performa metric grid. Four metrics (gmv/expense/clicks/impressions)
+// double as the HourlyChart's series toggles — selecting one tints its card
+// with that series' color.
 export function PerformanceCards({ range, selected, onToggle }: PerformanceCardsProps) {
   const { data, isPending, isError } = usePerformance(range)
 
@@ -88,6 +84,7 @@ export function PerformanceCards({ range, selected, onToggle }: PerformanceCards
             const isSelectable = metric.series !== undefined
             const isSelected = isSelectable && selected.includes(metric.key)
             const styles = metric.series ? SERIES_STYLES[metric.series] : undefined
+            const value = data.metrics[metric.key]
 
             const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
               if (!isSelectable) return
@@ -122,7 +119,9 @@ export function PerformanceCards({ range, selected, onToggle }: PerformanceCards
                       <TooltipContent>{metric.description}</TooltipContent>
                     </Tooltip>
                   </span>
-                  <span className="text-2xl leading-none font-semibold tabular-nums">{metric.format(data.metrics[metric.key])}</span>
+                  <span className={cn("text-2xl leading-none font-semibold tabular-nums", metric.valueClassName?.(value))}>
+                    {metric.format(value)}
+                  </span>
                   <DeltaLine delta={data.deltas[metric.key]} />
                 </CardContent>
               </Card>

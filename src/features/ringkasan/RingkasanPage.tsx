@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { subDays } from "date-fns"
-import { ChevronDown, Download, HelpCircle } from "lucide-react"
+import { Download, HelpCircle } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,13 +9,14 @@ import type { DateRange } from "@/api/ads"
 import { DateRangePicker } from "@/features/ringkasan/DateRangePicker"
 import { PerformanceCards, type MetricKey } from "@/features/ringkasan/PerformanceCards"
 import { HourlyChart } from "@/features/ringkasan/HourlyChart"
+import { Highlights } from "@/features/ringkasan/Highlights"
 import { AdList } from "@/features/ringkasan/AdList"
 
 const DEFAULT_RANGE: DateRange = { from: subDays(new Date(), 29), to: new Date() }
-const DEFAULT_SELECTED: MetricKey[] = ["impressions", "clicks", "itemsSold", "gmv"]
+const DEFAULT_SELECTED: MetricKey[] = ["gmv", "expense", "clicks", "impressions"]
 
 // F1.1 / F1.8: Ringkasan (dashboard) — Performa card (metric cards + hourly
-// trend) mirroring Shopee Ads Manager, plus the Daftar Iklan Produk table.
+// trend), rule-based Sorotan, and Iklan Saya table with per-ad verdicts.
 export default function RingkasanPage() {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
   const [selected, setSelected] = useState<MetricKey[]>(DEFAULT_SELECTED)
@@ -36,7 +37,7 @@ export default function RingkasanPage() {
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5">
-            <CardTitle>Performa</CardTitle>
+            <CardTitle>Performa Iklan</CardTitle>
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -54,10 +55,6 @@ export default function RingkasanPage() {
               <Download data-icon="inline-start" />
               Unduh Data
             </Button>
-            <Button variant="outline">
-              Metrik Lainnya
-              <ChevronDown data-icon="inline-end" />
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -65,6 +62,8 @@ export default function RingkasanPage() {
           <HourlyChart range={range} selected={selected} />
         </CardContent>
       </Card>
+
+      <Highlights range={range} />
 
       <AdList range={range} />
     </div>

@@ -1,9 +1,11 @@
 import { useState } from "react"
 import { format as formatDate, parseISO } from "date-fns"
-import { ChevronLeft, ChevronRight, Search, SearchX, Shield, TrendingUp } from "lucide-react"
+import { id as idLocale } from "date-fns/locale"
+import { Link } from "react-router"
+import { ChevronLeft, ChevronRight, Search, SearchX } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
@@ -20,8 +22,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
-import { formatNumber, formatPercent, formatRupiah } from "@/lib/format"
-import { useAdList, type AdListParams, type AdListRow, type DateRange } from "@/api/ads"
+import { formatPercent, formatRoas, formatRupiah } from "@/lib/format"
+import { useAdList, type AdListParams, type AdListRow, type AdVerdict, type DateRange } from "@/api/ads"
 
 interface AdListProps {
   range: DateRange
@@ -30,7 +32,6 @@ interface AdListProps {
 type TabFilter = AdListParams["tab"]
 type StatusFilter = AdListParams["status"]
 type AdTypeFilter = AdListParams["adType"]
-type DiagnosisFilter = AdListParams["diagnosis"]
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -59,60 +60,49 @@ const STATUS_DOT: Record<AdListRow["status"], string> = {
   deleted: "bg-muted-foreground",
 }
 
-const BIDDING_LABEL: Record<AdListRow["bidding_mode"], string> = {
-  gmv_max_auto: "Iklan Produk GMV Max Auto",
-  gmv_max_roas: "GMV Max ROAS",
-  manual: "Manual",
+const AD_TYPE_LABEL: Record<AdListRow["ad_type"], string> = {
+  product: "Iklan Produk",
+  shop: "Iklan Toko",
 }
 
-const STAGE_LABEL: Record<AdListRow["stage"], string> = {
-  1: "Tahap 1: Dapatkan Klik",
-  2: "Tahap 2: Tingkatkan Penjualan",
-}
-
-// Target ROAS reads "5,79 ~ 10,36" (2 decimals, no "x") per the Shopee
-// reference table — distinct from formatRoas (1 decimal + "x") in lib/format.
-const targetRoasFormatter = new Intl.NumberFormat("id-ID", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
-function formatTargetRoas(min: number, max: number): string {
-  if (min === 0 && max === 0) return "-"
-  if (min === max) return targetRoasFormatter.format(min)
-  return `${targetRoasFormatter.format(min)} ~ ${targetRoasFormatter.format(max)}`
+const VERDICT_CONFIG: Record<AdVerdict, { label: string; className?: string }> = {
+  scale_up: { label: "Naikkan", className: "border-transparent bg-success/10 text-success" },
+  hold: { label: "Tahan" },
+  scale_down: { label: "Turunkan", className: "border-transparent bg-danger/10 text-danger" },
+  fix_listing: { label: "Perbaiki Listing", className: "border-transparent bg-brand-tint text-brand" },
 }
 
 function formatPeriod(startDate: string, endDate: string): string {
-  if (!endDate) return "Tidak Terbatas"
-  return `${formatDate(parseISO(startDate), "dd/MM/yyyy")} – ${formatDate(parseISO(endDate), "dd/MM/yyyy")}`
+  if (!endDate) return "Tanpa batas"
+  const start = formatDate(parseISO(startDate), "dd MMM", { locale: idLocale })
+  const end = formatDate(parseISO(endDate), "dd MMM yyyy", { locale: idLocale })
+  return `${start} – ${end}`
 }
 
-function MetricDeltaCell({ value, delta }: { value: number; delta: number | null }) {
+function DeltaLine({ delta }: { delta: number | null }) {
+  if (delta === null) return <span className="text-xs text-muted-foreground">-</span>
+  return (
+    <span className={cn("text-xs font-medium tabular-nums", delta >= 0 ? "text-success" : "text-danger")}>
+      {delta >= 0 ? "▲" : "▼"} {formatPercent(Math.abs(delta))}
+    </span>
+  )
+}
+
+function MoneyDeltaCell({ value, delta }: { value: number; delta: number | null }) {
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <span className="tabular-nums">{formatNumber(value)}</span>
-      {delta === null ? (
-        <span className="text-xs text-muted-foreground">-</span>
-      ) : (
-        <span className={cn("text-xs font-medium tabular-nums", delta >= 0 ? "text-success" : "text-danger")}>
-          {delta >= 0 ? "▲" : "▼"} {formatPercent(Math.abs(delta))}
-        </span>
-      )}
+      <span className="tabular-nums">{formatRupiah(value)}</span>
+      <DeltaLine delta={delta} />
     </div>
   )
 }
 
-function DiagnosisCell({ diagnosis }: { diagnosis: AdListRow["diagnosis"] }) {
-  if (diagnosis === "none") return <span className="text-sm text-muted-foreground">-</span>
+function RoasCell({ roas, delta }: { roas: number; delta: number | null }) {
+  const color = roas < 1.5 ? "text-danger" : roas > 4 ? "text-success" : undefined
   return (
-    <div className="flex flex-col items-start gap-0.5">
-      <span className={cn("text-sm font-medium", diagnosis === "good" ? "text-success" : "text-brand")}>
-        {diagnosis === "good" ? "Baik" : "Perlu Perhatian"}
-      </span>
-      <Button variant="link" size="sm" className="h-auto justify-start p-0 text-xs">
-        Lihat Rincian
-      </Button>
+    <div className="flex flex-col items-end gap-0.5">
+      <span className={cn("font-bold tabular-nums", color)}>{formatRoas(roas)}</span>
+      <DeltaLine delta={delta} />
     </div>
   )
 }
@@ -130,23 +120,35 @@ function AdInfoCell({ row }: { row: AdListRow }) {
         <span className="truncate text-sm font-bold" title={row.ad_name}>
           {row.ad_name}
         </span>
-        <Badge className="w-fit border-transparent bg-brand-tint text-brand">
-          <TrendingUp data-icon="inline-start" />
-          {STAGE_LABEL[row.stage]}
-        </Badge>
-        <span className="text-xs text-muted-foreground">{BIDDING_LABEL[row.bidding_mode]}</span>
-        <span className="text-xs text-muted-foreground">{formatPeriod(row.start_date, row.end_date)}</span>
+        <span className="text-xs text-muted-foreground">
+          {AD_TYPE_LABEL[row.ad_type]} · {formatPeriod(row.start_date, row.end_date)}
+        </span>
         <div className="flex items-center gap-1.5">
           <span className={cn("size-1.5 shrink-0 rounded-full", STATUS_DOT[row.status])} />
           <span className="text-xs text-muted-foreground">{STATUS_ROW_LABEL[row.status]}</span>
         </div>
-        {row.roas_protection && (
-          <Badge variant="outline" className="w-fit">
-            <Shield data-icon="inline-start" />
-            Proteksi ROAS
-          </Badge>
-        )}
       </div>
+    </div>
+  )
+}
+
+function VerdictCell({ row }: { row: AdListRow }) {
+  const config = VERDICT_CONFIG[row.verdict]
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Badge variant="outline" className={config.className}>
+        {config.label}
+      </Badge>
+      <span className="text-xs text-muted-foreground">{row.verdictReason}</span>
+      <Button
+        variant="link"
+        size="sm"
+        className="h-auto justify-start p-0 text-xs"
+        nativeButton={false}
+        render={<Link to={`/chat?ad=${row.campaign_id}`} />}
+      >
+        Tanya AI →
+      </Button>
     </div>
   )
 }
@@ -164,23 +166,23 @@ function SkeletonRow() {
         </div>
       </TableCell>
       <TableCell><Skeleton className="ml-auto h-4 w-20" /></TableCell>
+      <TableCell><Skeleton className="ml-auto h-4 w-20" /></TableCell>
       <TableCell><Skeleton className="ml-auto h-4 w-16" /></TableCell>
-      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-      <TableCell><Skeleton className="ml-auto h-4 w-12" /></TableCell>
-      <TableCell><Skeleton className="ml-auto h-4 w-12" /></TableCell>
+      <TableCell><Skeleton className="ml-auto h-4 w-16" /></TableCell>
+      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
     </TableRow>
   )
 }
 
-// F1.9: Daftar Iklan Produk — tabs (manual/auto), status chips, search +
-// type/diagnosis filters, and a paginated table. Owns all its filter state;
-// any filter change resets pagination back to page 1.
+// UNIT ad-list: tabs (all/action/healthy), status chips, search + type
+// filter, and a paginated table of per-ad ROAS/CTR verdicts with a bridge
+// to the AI consultant. Owns all its filter state; any filter change resets
+// pagination back to page 1.
 export function AdList({ range }: AdListProps) {
-  const [tab, setTab] = useState<TabFilter>("manual")
+  const [tab, setTab] = useState<TabFilter>("all")
   const [status, setStatus] = useState<StatusFilter>("all")
   const [search, setSearch] = useState("")
   const [adType, setAdType] = useState<AdTypeFilter>("all")
-  const [diagnosis, setDiagnosis] = useState<DiagnosisFilter>("all")
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
@@ -190,7 +192,7 @@ export function AdList({ range }: AdListProps) {
     status,
     search,
     adType,
-    diagnosis,
+    diagnosis: "all",
     page,
     pageSize,
   })
@@ -201,7 +203,8 @@ export function AdList({ range }: AdListProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Daftar Iklan Produk</CardTitle>
+        <CardTitle className="text-lg font-semibold">Iklan Saya</CardTitle>
+        <CardDescription>Penilaian otomatis berdasarkan ROAS, biaya, dan CTR pada periode terpilih</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Tabs
@@ -212,35 +215,33 @@ export function AdList({ range }: AdListProps) {
           }}
         >
           <TabsList>
-            <TabsTrigger value="manual">Iklan Individual & Grup Iklan</TabsTrigger>
-            <TabsTrigger value="auto">Iklan Produk Otomatis</TabsTrigger>
+            <TabsTrigger value="all">Semua</TabsTrigger>
+            <TabsTrigger value="action">Perlu Tindakan</TabsTrigger>
+            <TabsTrigger value="healthy">Sehat</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Status Iklan</span>
-          <ToggleGroup
-            variant="outline"
-            size="sm"
-            value={[status]}
-            onValueChange={(value) => {
-              if (value.length === 0) return
-              setStatus(value[0] as StatusFilter)
-              setPage(1)
-            }}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <ToggleGroupItem key={option.value} value={option.value}>
-                {option.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
+        <ToggleGroup
+          variant="outline"
+          size="sm"
+          value={[status]}
+          onValueChange={(value) => {
+            if (value.length === 0) return
+            setStatus(value[0] as StatusFilter)
+            setPage(1)
+          }}
+        >
+          {STATUS_OPTIONS.map((option) => (
+            <ToggleGroupItem key={option.value} value={option.value}>
+              {option.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         <div className="flex flex-wrap items-center gap-2">
           <InputGroup className="max-w-xs">
             <InputGroupInput
-              placeholder="Cari nama iklan"
+              placeholder="Cari iklan"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -253,7 +254,7 @@ export function AdList({ range }: AdListProps) {
           </InputGroup>
 
           <Select
-            items={{ all: "Semua Tipe", product: "Produk", shop: "Toko" }}
+            items={{ all: "Semua Tipe", product: "Iklan Produk", shop: "Iklan Toko" }}
             value={adType}
             onValueChange={(value) => {
               setAdType(value as AdTypeFilter)
@@ -264,26 +265,8 @@ export function AdList({ range }: AdListProps) {
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="all">Semua Tipe</SelectItem>
-                <SelectItem value="product">Produk</SelectItem>
-                <SelectItem value="shop">Toko</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-
-          <Select
-            items={{ all: "Semua Status Diagnosis", good: "Baik", needs_attention: "Perlu Perhatian" }}
-            value={diagnosis}
-            onValueChange={(value) => {
-              setDiagnosis(value as DiagnosisFilter)
-              setPage(1)
-            }}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="all">Semua Status Diagnosis</SelectItem>
-                <SelectItem value="good">Baik</SelectItem>
-                <SelectItem value="needs_attention">Perlu Perhatian</SelectItem>
+                <SelectItem value="product">Iklan Produk</SelectItem>
+                <SelectItem value="shop">Iklan Toko</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -306,12 +289,12 @@ export function AdList({ range }: AdListProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Info Iklan</TableHead>
-                  <TableHead className="text-right">Modal Harian</TableHead>
-                  <TableHead className="text-right">Target ROAS</TableHead>
-                  <TableHead>Diagnosis</TableHead>
-                  <TableHead className="text-right">Jumlah Klik</TableHead>
-                  <TableHead className="text-right">Tambah ke Keranjang</TableHead>
+                  <TableHead>Iklan</TableHead>
+                  <TableHead className="text-right">Biaya</TableHead>
+                  <TableHead className="text-right">Penjualan</TableHead>
+                  <TableHead className="text-right">ROAS</TableHead>
+                  <TableHead className="text-right">Laba</TableHead>
+                  <TableHead>Penilaian</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -320,15 +303,13 @@ export function AdList({ range }: AdListProps) {
                   : data?.rows.map((row) => (
                       <TableRow key={row.campaign_id}>
                         <TableCell><AdInfoCell row={row} /></TableCell>
+                        <TableCell><MoneyDeltaCell value={row.expense} delta={row.expenseDelta} /></TableCell>
+                        <TableCell><MoneyDeltaCell value={row.gmv} delta={row.gmvDelta} /></TableCell>
+                        <TableCell><RoasCell roas={row.roas} delta={row.roasDelta} /></TableCell>
                         <TableCell className="text-right tabular-nums">
-                          {row.daily_budget === 0 ? "Tidak Terbatas" : formatRupiah(row.daily_budget)}
+                          <span className={cn(row.profit < 0 && "text-danger")}>{formatRupiah(row.profit)}</span>
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatTargetRoas(row.target_roas_min, row.target_roas_max)}
-                        </TableCell>
-                        <TableCell><DiagnosisCell diagnosis={row.diagnosis} /></TableCell>
-                        <TableCell><MetricDeltaCell value={row.clicks} delta={row.clicksDelta} /></TableCell>
-                        <TableCell><MetricDeltaCell value={row.addToCart} delta={row.addToCartDelta} /></TableCell>
+                        <TableCell><VerdictCell row={row} /></TableCell>
                       </TableRow>
                     ))}
               </TableBody>

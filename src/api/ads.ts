@@ -269,58 +269,65 @@ function computeBudget(): BudgetSummary {
 
 const rangeKey = (range: DateRange) => [range.from.toISOString(), range.to.toISOString()]
 
+// mock: replace in phase 4 — simulated network latency so skeletons and the
+// global loading bar actually show; Edge Functions will supply real latency.
+function withLatency<T>(compute: () => T): Promise<T> {
+  const ms = 450 + Math.random() * 400
+  return new Promise((resolve) => setTimeout(() => resolve(compute()), ms))
+}
+
 export function useAdsSummary(range: DateRange) {
   return useQuery({
     queryKey: ['ads-summary', ...rangeKey(range)],
-    queryFn: () => computeSummary(range),
+    queryFn: () => withLatency(() => computeSummary(range)),
   })
 }
 
 export function useAdsDaily(range: DateRange, granularity: Granularity = 'day') {
   return useQuery({
     queryKey: ['ads-daily', ...rangeKey(range), granularity],
-    queryFn: () => computeDaily(range, granularity),
+    queryFn: () => withLatency(() => computeDaily(range, granularity)),
   })
 }
 
 export function useCampaigns(range: DateRange) {
   return useQuery({
     queryKey: ['ads-campaigns', ...rangeKey(range)],
-    queryFn: () => computeCampaigns(range),
+    queryFn: () => withLatency(() => computeCampaigns(range)),
   })
 }
 
 export function useAttention(range: DateRange) {
   return useQuery({
     queryKey: ['ads-attention', ...rangeKey(range)],
-    queryFn: () => computeAttention(range),
+    queryFn: () => withLatency(() => computeAttention(range)),
   })
 }
 
 export function useSpendByType(range: DateRange) {
   return useQuery({
     queryKey: ['ads-spend-by-type', ...rangeKey(range)],
-    queryFn: () => computeSpendByType(range),
+    queryFn: () => withLatency(() => computeSpendByType(range)),
   })
 }
 
 export function useBestHours(range: DateRange) {
   return useQuery({
     queryKey: ['ads-best-hours', ...rangeKey(range)],
-    queryFn: () => computeBestHours(range),
+    queryFn: () => withLatency(() => computeBestHours(range)),
   })
 }
 
 export function useTopCampaigns(range: DateRange, limit = 5) {
   return useQuery({
     queryKey: ['ads-top-campaigns', ...rangeKey(range), limit],
-    queryFn: () => computeTopCampaigns(range, limit),
+    queryFn: () => withLatency(() => computeTopCampaigns(range, limit)),
   })
 }
 
 export function useBudget() {
   return useQuery({
     queryKey: ['ads-budget'],
-    queryFn: () => computeBudget(),
+    queryFn: () => withLatency(() => computeBudget()),
   })
 }

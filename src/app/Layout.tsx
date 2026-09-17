@@ -1,3 +1,4 @@
+import { useIsFetching } from "@tanstack/react-query"
 import { useTheme } from "next-themes"
 import { NavLink, Outlet, useLocation } from "react-router"
 import {
@@ -12,6 +13,7 @@ import {
   ShoppingBagIcon,
 } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,6 +45,22 @@ const OTHER_ITEMS = [
 ] as const
 
 const ALL_ITEMS = [...NAV_ITEMS, ...OTHER_ITEMS]
+
+// Slim indeterminate bar under the header while any query is in flight.
+function GlobalLoadingBar() {
+  const fetching = useIsFetching()
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden transition-opacity duration-300",
+        fetching ? "opacity-100" : "opacity-0",
+      )}
+    >
+      <div className="h-full w-1/3 rounded-full bg-brand animate-loading-bar" />
+    </div>
+  )
+}
 
 function ThemeToggle() {
   // next-themes is already a project dependency; toggles the `dark` class
@@ -125,7 +143,8 @@ export function Layout() {
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 px-6">
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-card/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <GlobalLoadingBar />
           <h1 className="text-xl font-semibold">{activeItem?.label ?? "Ringkasan"}</h1>
           <div className="flex items-center gap-3">
             <div className="relative hidden sm:block">
@@ -143,7 +162,7 @@ export function Layout() {
             </Avatar>
           </div>
         </header>
-        <main className="flex-1 p-6">
+        <main className="flex-1">
           <Outlet />
         </main>
       </SidebarInset>

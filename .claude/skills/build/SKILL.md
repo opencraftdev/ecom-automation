@@ -14,5 +14,5 @@ The user has explicitly opted into multi-agent orchestration by invoking this sk
 
 Do not re-plan, re-implement, or re-audit inline. The workflow owns the work.
 
-Agents used (in `.claude/agents/`): graph-engineer → worker (parallel) → auditor (logic + review, one repair pass) → synthesizer.
+Agents used (in `.claude/agents/`): graph-engineer (tags units frontend/backend) → worker or frontend-worker (parallel; frontend-worker checks the shadcn registry via skill + MCP before writing UI) → auditor (logic + review incl. shadcn audit checklist, one repair pass) → synthesizer.
 Script: `.claude/workflows/build.js`.

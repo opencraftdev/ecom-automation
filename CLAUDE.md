@@ -15,6 +15,10 @@ Multi-tenant SaaS for Shopee sellers. Three core features: ads dashboard (ROAS, 
 - Claude API for chat and judgment. Default `claude-sonnet-5` for chat, `claude-haiku-4-5-20251001` for cheap classification.
 - Shopee API is called only from Edge Functions. The partner key must never appear in frontend code, frontend `.env`, or logs.
 
+## Frontend rules
+- Before writing any UI component, load the `shadcn` skill and query the shadcn MCP registry (`search_items_in_registries`). Install with `npx shadcn add`; never hand-write a primitive the registry provides. Run `get_audit_checklist` before finishing. Enforced by `frontend-worker` and the review auditor.
+- Design tokens and layout: `docs/plan/phase-1-ui-demo.md`. No hard-coded hex in components.
+
 ## Mock-phase rules
 - Mock data lives in `src/mocks/` and mirrors Shopee Ads API responses exactly (same field names). Mark with `// mock: replace in phase 4`.
 - All fetches go through one layer, `src/api/`, so the swap to Edge Functions happens in one place.

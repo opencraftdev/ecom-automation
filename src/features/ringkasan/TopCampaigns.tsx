@@ -32,15 +32,19 @@ const typeLabel: Record<CampaignSummary["adType"], string> = {
 }
 
 const statusLabel: Record<CampaignSummary["status"], string> = {
+  scheduled: "Terjadwal",
   ongoing: "Aktif",
   paused: "Jeda",
   ended: "Selesai",
+  deleted: "Dihapus",
 }
 
 const statusVariant: Record<CampaignSummary["status"], "default" | "secondary" | "outline"> = {
+  scheduled: "outline",
   ongoing: "default",
   paused: "secondary",
   ended: "outline",
+  deleted: "secondary",
 }
 
 // F1.5: 5 best campaigns by ROAS for the selected range.

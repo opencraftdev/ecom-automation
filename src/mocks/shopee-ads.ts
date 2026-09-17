@@ -3,7 +3,7 @@
 // Field names per docs/plan/phase-1-ui-demo.md — verify once partner access is granted.
 
 export type ShopeeAdType = "product" | "shop";
-export type ShopeeAdStatus = "ongoing" | "paused" | "ended";
+export type ShopeeAdStatus = "scheduled" | "ongoing" | "paused" | "ended" | "deleted";
 
 export interface ShopeeAdDailyPerformance {
   campaign_id: string;
@@ -22,6 +22,31 @@ export interface ShopeeAdDailyPerformance {
   direct_gmv: number; // IDR
   direct_order: number;
   direct_roi: number;
+  add_to_cart: number;
+}
+
+export type ShopeeAdBiddingMode = "gmv_max_auto" | "gmv_max_roas" | "manual";
+export type ShopeeAdStage = 1 | 2;
+export type ShopeeAdDiagnosis = "good" | "needs_attention" | "none";
+
+export interface ShopeeAdCampaign {
+  campaign_id: string;
+  ad_name: string;
+  ad_type: ShopeeAdType;
+  status: ShopeeAdStatus;
+  bidding_mode: ShopeeAdBiddingMode;
+  stage: ShopeeAdStage; // 1 = Dapatkan Klik, 2 = Tingkatkan Penjualan
+  daily_budget: number; // IDR, 0 = unlimited
+  target_roas_min: number; // equal to max when bidding is roas-fixed, both 0 when n/a
+  target_roas_max: number;
+  start_date: string; // YYYY-MM-DD
+  end_date: string; // '' = no end
+  roas_protection: boolean;
+  // ponytail: not a real Shopee Ads API field — UI-only placeholder thumbnail
+  // (no ad creative asset in mock phase). Diverges from the "mirror the API
+  // shape" rule deliberately; drop once real ad image URLs are available.
+  thumbnail: { bg: string; initials: string };
+  diagnosis: ShopeeAdDiagnosis;
 }
 
 interface CampaignSeed {
@@ -34,22 +59,51 @@ interface CampaignSeed {
   ctrBase: number; // percent
   cpcBase: number; // IDR
   roasBase: number; // broad_roi target
+  // per-campaign metadata (shopeeAdCampaigns export)
+  bidding_mode: ShopeeAdBiddingMode;
+  stage: ShopeeAdStage;
+  daily_budget: number;
+  target_roas_min: number;
+  target_roas_max: number;
+  startDaysAgo: number; // negative = future (scheduled)
+  endDaysAgo: number | null; // null = no end
+  roas_protection: boolean;
+  thumbnail: { bg: string; initials: string };
+  diagnosis: ShopeeAdDiagnosis;
 }
 
 const CAMPAIGN_SEEDS: CampaignSeed[] = [
-  { campaign_id: "cmp-1001", ad_name: "Iklan Produk - Tas Wanita Kanvas", ad_type: "product", status: "ongoing", dailyImpressionBase: 12000, ctrBase: 1.8, cpcBase: 850, roasBase: 5.2 },
-  { campaign_id: "cmp-1002", ad_name: "Iklan Produk - Sepatu Sneakers Pria", ad_type: "product", status: "ongoing", dailyImpressionBase: 9500, ctrBase: 1.4, cpcBase: 1200, roasBase: 3.8 },
-  { campaign_id: "cmp-1003", ad_name: "Iklan Toko - Flash Sale Mingguan", ad_type: "shop", status: "ongoing", dailyImpressionBase: 20000, ctrBase: 0.9, cpcBase: 600, roasBase: 2.6 },
-  { campaign_id: "cmp-1004", ad_name: "Iklan Produk - Skincare Serum Wajah", ad_type: "product", status: "ongoing", dailyImpressionBase: 15000, ctrBase: 2.1, cpcBase: 950, roasBase: 6.1 },
-  { campaign_id: "cmp-1005", ad_name: "Iklan Produk - Baju Koko Anak", ad_type: "product", status: "paused", dailyImpressionBase: 4000, ctrBase: 0.6, cpcBase: 700, roasBase: 1.1 },
-  { campaign_id: "cmp-1006", ad_name: "Iklan Toko - Promo Gudang", ad_type: "shop", status: "ongoing", dailyImpressionBase: 22000, ctrBase: 1.8, cpcBase: 500, roasBase: 1.3 },
-  { campaign_id: "cmp-1007", ad_name: "Iklan Produk - Aksesoris HP", ad_type: "product", status: "ongoing", dailyImpressionBase: 18000, ctrBase: 2.5, cpcBase: 400, roasBase: 4.4 },
-  { campaign_id: "cmp-1008", ad_name: "Iklan Produk - Peralatan Dapur Set", ad_type: "product", status: "ongoing", dailyImpressionBase: 16000, ctrBase: 1.4, cpcBase: 1100, roasBase: 1.4 },
-  { campaign_id: "cmp-1009", ad_name: "Iklan Toko - Koleksi Baru", ad_type: "shop", status: "ended", dailyImpressionBase: 6000, ctrBase: 1.3, cpcBase: 750, roasBase: 2.9 },
-  { campaign_id: "cmp-1010", ad_name: "Iklan Produk - Mainan Edukasi Anak", ad_type: "product", status: "ongoing", dailyImpressionBase: 13000, ctrBase: 1.7, cpcBase: 650, roasBase: 3.2 },
-  { campaign_id: "cmp-1011", ad_name: "Iklan Produk - Jam Tangan Wanita", ad_type: "product", status: "ongoing", dailyImpressionBase: 10000, ctrBase: 1.6, cpcBase: 900, roasBase: 4.9 },
-  { campaign_id: "cmp-1012", ad_name: "Iklan Toko - Gratis Ongkir", ad_type: "shop", status: "ongoing", dailyImpressionBase: 40000, ctrBase: 1.2, cpcBase: 550, roasBase: 1.2 },
+  { campaign_id: "cmp-1001", ad_name: "Iklan Produk - Tas Wanita Kanvas", ad_type: "product", status: "ongoing", dailyImpressionBase: 12000, ctrBase: 1.8, cpcBase: 850, roasBase: 5.2, bidding_mode: "manual", stage: 2, daily_budget: 500000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 60, endDaysAgo: null, roas_protection: false, thumbnail: { bg: "#F5A623", initials: "TW" }, diagnosis: "good" },
+  { campaign_id: "cmp-1002", ad_name: "Iklan Produk - Sepatu Sneakers Pria", ad_type: "product", status: "ongoing", dailyImpressionBase: 9500, ctrBase: 1.4, cpcBase: 1200, roasBase: 3.8, bidding_mode: "gmv_max_auto", stage: 2, daily_budget: 0, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 60, endDaysAgo: null, roas_protection: true, thumbnail: { bg: "#4A90D9", initials: "SS" }, diagnosis: "good" },
+  { campaign_id: "cmp-1003", ad_name: "Iklan Toko - Flash Sale Mingguan", ad_type: "shop", status: "ongoing", dailyImpressionBase: 20000, ctrBase: 0.9, cpcBase: 600, roasBase: 2.6, bidding_mode: "gmv_max_roas", stage: 2, daily_budget: 300000, target_roas_min: 2.5, target_roas_max: 2.5, startDaysAgo: 60, endDaysAgo: null, roas_protection: true, thumbnail: { bg: "#E8534E", initials: "FS" }, diagnosis: "needs_attention" },
+  { campaign_id: "cmp-1004", ad_name: "Iklan Produk - Skincare Serum Wajah", ad_type: "product", status: "ongoing", dailyImpressionBase: 15000, ctrBase: 2.1, cpcBase: 950, roasBase: 6.1, bidding_mode: "manual", stage: 1, daily_budget: 800000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 60, endDaysAgo: null, roas_protection: false, thumbnail: { bg: "#7ED957", initials: "SK" }, diagnosis: "good" },
+  { campaign_id: "cmp-1005", ad_name: "Iklan Produk - Baju Koko Anak", ad_type: "product", status: "paused", dailyImpressionBase: 4000, ctrBase: 0.6, cpcBase: 700, roasBase: 1.1, bidding_mode: "manual", stage: 1, daily_budget: 200000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 45, endDaysAgo: null, roas_protection: false, thumbnail: { bg: "#B78BDE", initials: "BK" }, diagnosis: "needs_attention" },
+  { campaign_id: "cmp-1006", ad_name: "Iklan Toko - Promo Gudang", ad_type: "shop", status: "ongoing", dailyImpressionBase: 22000, ctrBase: 1.8, cpcBase: 500, roasBase: 1.3, bidding_mode: "gmv_max_auto", stage: 2, daily_budget: 0, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 60, endDaysAgo: null, roas_protection: true, thumbnail: { bg: "#F2994A", initials: "PG" }, diagnosis: "needs_attention" },
+  { campaign_id: "cmp-1007", ad_name: "Iklan Produk - Aksesoris HP", ad_type: "product", status: "scheduled", dailyImpressionBase: 18000, ctrBase: 2.5, cpcBase: 400, roasBase: 4.4, bidding_mode: "manual", stage: 1, daily_budget: 400000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: -7, endDaysAgo: null, roas_protection: false, thumbnail: { bg: "#56CCF2", initials: "AH" }, diagnosis: "none" },
+  { campaign_id: "cmp-1008", ad_name: "Iklan Produk - Peralatan Dapur Set", ad_type: "product", status: "paused", dailyImpressionBase: 16000, ctrBase: 1.4, cpcBase: 1100, roasBase: 1.4, bidding_mode: "gmv_max_roas", stage: 2, daily_budget: 350000, target_roas_min: 1.5, target_roas_max: 1.5, startDaysAgo: 45, endDaysAgo: null, roas_protection: true, thumbnail: { bg: "#9B9B9B", initials: "PD" }, diagnosis: "needs_attention" },
+  { campaign_id: "cmp-1009", ad_name: "Iklan Toko - Koleksi Baru", ad_type: "shop", status: "ended", dailyImpressionBase: 6000, ctrBase: 1.3, cpcBase: 750, roasBase: 2.9, bidding_mode: "manual", stage: 2, daily_budget: 250000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 90, endDaysAgo: 5, roas_protection: false, thumbnail: { bg: "#D9534F", initials: "KB" }, diagnosis: "none" },
+  { campaign_id: "cmp-1010", ad_name: "Iklan Produk - Mainan Edukasi Anak", ad_type: "product", status: "ended", dailyImpressionBase: 13000, ctrBase: 1.7, cpcBase: 650, roasBase: 3.2, bidding_mode: "manual", stage: 1, daily_budget: 300000, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 90, endDaysAgo: 5, roas_protection: false, thumbnail: { bg: "#F8C471", initials: "ME" }, diagnosis: "none" },
+  { campaign_id: "cmp-1011", ad_name: "Iklan Produk - Jam Tangan Wanita", ad_type: "product", status: "deleted", dailyImpressionBase: 10000, ctrBase: 1.6, cpcBase: 900, roasBase: 4.9, bidding_mode: "manual", stage: 2, daily_budget: 0, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 120, endDaysAgo: 10, roas_protection: false, thumbnail: { bg: "#C0392B", initials: "JT" }, diagnosis: "none" },
+  { campaign_id: "cmp-1012", ad_name: "Iklan Toko - Gratis Ongkir", ad_type: "shop", status: "ongoing", dailyImpressionBase: 40000, ctrBase: 1.2, cpcBase: 550, roasBase: 1.2, bidding_mode: "gmv_max_auto", stage: 2, daily_budget: 0, target_roas_min: 0, target_roas_max: 0, startDaysAgo: 60, endDaysAgo: null, roas_protection: true, thumbnail: { bg: "#27AE60", initials: "GO" }, diagnosis: "needs_attention" },
 ];
+
+// mock: replace in phase 4 — per-campaign metadata (bidding, budget, ROAS targets, diagnosis)
+export const shopeeAdCampaigns: ShopeeAdCampaign[] = CAMPAIGN_SEEDS.map((seed) => ({
+  campaign_id: seed.campaign_id,
+  ad_name: seed.ad_name,
+  ad_type: seed.ad_type,
+  status: seed.status,
+  bidding_mode: seed.bidding_mode,
+  stage: seed.stage,
+  daily_budget: seed.daily_budget,
+  target_roas_min: seed.target_roas_min,
+  target_roas_max: seed.target_roas_max,
+  start_date: dateNDaysAgo(seed.startDaysAgo),
+  end_date: seed.endDaysAgo === null ? "" : dateNDaysAgo(seed.endDaysAgo),
+  roas_protection: seed.roas_protection,
+  thumbnail: seed.thumbnail,
+  diagnosis: seed.diagnosis,
+}));
 
 const DAYS = 30;
 
@@ -83,6 +137,10 @@ function buildRows(): ShopeeAdDailyPerformance[] {
     const rand = mulberry32(campaignIndex * 1000 + 7);
 
     for (let dayOffset = DAYS - 1; dayOffset >= 0; dayOffset--) {
+      // No rows outside the campaign's own period: scheduled campaigns have no
+      // history yet, ended ones stop at end_date.
+      if (dayOffset > seed.startDaysAgo) continue;
+      if (seed.endDaysAgo !== null && dayOffset < seed.endDaysAgo) continue;
       const jitter = 0.85 + rand() * 0.3; // +/-15%
       const impression = Math.round(seed.dailyImpressionBase * jitter);
       const ctr = round2(seed.ctrBase * (0.85 + rand() * 0.3));
@@ -98,6 +156,8 @@ function buildRows(): ShopeeAdDailyPerformance[] {
       const direct_roi = round2(broad_roi * (0.5 + rand() * 0.2));
       const direct_gmv = Math.round(expense * direct_roi);
       const direct_order = Math.max(0, Math.round(direct_gmv / (80000 + rand() * 40000)));
+
+      const add_to_cart = Math.round(clicks * (0.08 + rand() * 0.07)); // ~8-15% of clicks
 
       rows.push({
         campaign_id: seed.campaign_id,
@@ -116,6 +176,7 @@ function buildRows(): ShopeeAdDailyPerformance[] {
         direct_gmv,
         direct_order,
         direct_roi,
+        add_to_cart,
       });
     }
   });

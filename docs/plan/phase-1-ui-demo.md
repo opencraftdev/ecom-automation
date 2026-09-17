@@ -6,13 +6,15 @@ Goal: a clickable demo a Shopee seller understands in 2 minutes. No auth, no bac
 
 | # | Route | Purpose | Key widgets |
 |---|---|---|---|
-| 1 | `/` Ringkasan | Health of the shop's ads in one glance | Fixed 12-col grid, rows: (1) 4 KPI cards, each primary metric + 7d delta + paired efficiency metric (ROAS/CTR, Spend/CPC, Revenue/impressions, Orders/clicks); (2) ROAS vs Spend dual-axis area chart (8) + Budget card with Produk/Toko allocation bars (4); (3) best-hours heatmap full width; (4) Top campaigns, Perlu perhatian, Wawasan at 4/4/4. Date-range picker in the page toolbar |
+| 1 | `/` Ringkasan | Mirrors Shopee Ads Manager (ref-5, ref-4) so sellers feel at home | **Performa**: header row (title, date-range pill, Download Data, Metrik Lainnya) · 8 metric cards in 2×4: Iklan Dilihat, Jumlah Klik, Persentase Klik, Pesanan / Produk Terjual, Penjualan, Biaya Iklan, ROAS; up to 4 cards selectable, each selected card gets a colored top bar and becomes a series in the hourly multi-line chart below (00:00–23:00, legend) · **Daftar Iklan Produk**: tabs (Iklan Individual & Grup Iklan / Iklan Produk Otomatis), status chips (Semua, Terjadwal, Berjalan, Nonaktif, Berakhir, Dihapus), search + Semua Tipe select + Semua Status Diagnosis select, table columns Info Iklan (thumbnail, name, Tahap badge, bidding label, period, status dot), Modal Harian, Target ROAS, Diagnosis, Jumlah Klik (+delta), Tambah ke Keranjang (+delta), pagination 20/halaman |
 | 2 | `/iklan` Iklan | Campaign table | Sortable table: campaign, status, spend, GMV, ROAS, CTR, CPC · filter status/type · row click → drawer with daily chart |
 | 3 | `/produk` Review Produk | Catalogue reviewer | Card grid or table per product: image, name, spend, ROAS, verdict badge (Naikkan / Tahan / Turunkan / Perbaiki listing) with one-line reason · filter by verdict |
 | 4 | `/chat` Konsultan AI | AI marketing chat | Thread list left · messages right · answer shows citation chips (e-book chapter) and inline metric chips (pulled from shop data) · 3 suggested prompts on empty state |
 | 5 | `/pengaturan` Pengaturan | Shop connection | "Hubungkan toko Shopee" card (disabled, coming soon) · shop switcher placeholder for multi-tenant |
 
 Layout: left sidebar (collapsible) + top bar with shop switcher and date range. Mobile: bottom tab bar.
+
+Series colors for the Performa chart (only place a second hue is allowed, matching Shopee): Iklan Dilihat `--series-1 #3B6FE0` blue, Jumlah Klik `--brand`, Produk Terjual `--series-3 #4B5A7A` slate, Penjualan `--series-4 #2FA79A` teal.
 
 ## Metrics and mock shape
 

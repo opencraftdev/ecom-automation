@@ -75,7 +75,7 @@
     --success: #16A34A;
     --danger: #B91C1C;
 
-    --background: #F5F6F8;
+    --background: #F3F4F7;
     --foreground: #111827;
     --card: #FFFFFF;
     --card-foreground: #111827;
@@ -98,7 +98,8 @@
     --chart-3: var(--brand-3);
     --chart-4: var(--brand-4);
     --chart-5: var(--brand-hover);
-    --radius: 1rem;
+    --radius: 0.875rem;
+    --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 12px 32px -16px rgb(16 24 40 / 0.12);
     --sidebar: #FFFFFF;
     --sidebar-foreground: #111827;
     --sidebar-primary: var(--brand);
@@ -115,9 +116,10 @@
     --brand-4: #5C2A1E;
     --brand-3: #8F3A26;
 
-    --background: #0F1115;
+    --background: #0F111A;
+    --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.05);
     --foreground: #F5F6F8;
-    --card: #171A21;
+    --card: #181B27;
     --card-foreground: #F5F6F8;
     --popover: #171A21;
     --popover-foreground: #F5F6F8;
@@ -125,12 +127,12 @@
     --primary-foreground: #FFFFFF;
     --secondary: #1D2129;
     --secondary-foreground: #F5F6F8;
-    --muted: #1D2129;
+    --muted: #202431;
     --muted-foreground: #9CA3AF;
     --accent: #26160F;
     --accent-foreground: var(--brand);
     --destructive: var(--danger);
-    --border: #262A33;
+    --border: #272B3A;
     --input: #262A33;
     --ring: var(--brand);
     --chart-1: var(--brand);
@@ -138,7 +140,7 @@
     --chart-3: var(--brand-3);
     --chart-4: var(--brand-4);
     --chart-5: var(--brand-hover);
-    --sidebar: #171A21;
+    --sidebar: #181B27;
     --sidebar-foreground: #F5F6F8;
     --sidebar-primary: var(--brand);
     --sidebar-primary-foreground: #FFFFFF;

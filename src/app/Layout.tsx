@@ -2,6 +2,8 @@ import { useTheme } from "next-themes"
 import { NavLink, Outlet, useLocation } from "react-router"
 import {
   BellIcon,
+  MoonIcon,
+  SunIcon,
   MegaphoneIcon,
   MessageCircleIcon,
   PackageIcon,
@@ -17,7 +19,6 @@ import { Kbd } from "@/components/ui/kbd"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -55,13 +56,14 @@ function ThemeToggle() {
       onValueChange={(next) => next[0] && setTheme(next[0])}
       spacing={0}
       variant="outline"
-      className="w-full"
+      size="sm"
+      className="bg-card"
     >
-      <ToggleGroupItem value="light" className="flex-1">
-        Terang
+      <ToggleGroupItem value="light" aria-label="Tema terang">
+        <SunIcon />
       </ToggleGroupItem>
-      <ToggleGroupItem value="dark" className="flex-1">
-        Gelap
+      <ToggleGroupItem value="dark" aria-label="Tema gelap">
+        <MoonIcon />
       </ToggleGroupItem>
     </ToggleGroup>
   )
@@ -121,19 +123,17 @@ export function Layout() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          <ThemeToggle />
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border px-6">
-          <h1 className="text-lg font-semibold">{activeItem?.label ?? "Ringkasan"}</h1>
+        <header className="flex h-16 shrink-0 items-center justify-between gap-4 px-6">
+          <h1 className="text-xl font-semibold">{activeItem?.label ?? "Ringkasan"}</h1>
           <div className="flex items-center gap-3">
             <div className="relative hidden sm:block">
               <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Cari..." className="w-56 pl-8" />
               <Kbd className="absolute right-2 top-1/2 -translate-y-1/2">⌘K</Kbd>
             </div>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" aria-label="Notifikasi" className="relative">
               <BellIcon />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-destructive" />

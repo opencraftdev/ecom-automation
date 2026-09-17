@@ -67,8 +67,10 @@ Auth, billing, real Shopee calls, RAG, multi-shop data, export, notifications.
 
 References: `docs/plan/refs/ref-1-bankly.png`, `docs/plan/refs/ref-2-gotics.png`. Match this look; do not invent another one.
 
-### Layout
-- Page background light gray; content in white cards, 1px border, radius 16px, no heavy shadow.
+### Layout (fluid pass, 2026-09-17, ref-3-fluid-business.png)
+- Page background light gray; content in white cards with **no border**, radius ~20px (`--radius: 0.875rem`, card = rounded-xl), soft shadow `--shadow-card`. Dark: navy `#0F111A` page, `#181B27` cards, 1px white/5% ring instead of shadow.
+- Every control is a pill: Button, Input, Select trigger, Toggle/ToggleGroup, Badge, sidebar menu items. Set in the core `src/components/ui/*` files, never per widget.
+- Toggle "on" state = brand tint bg + brand text. Theme switch = sun/moon icon ToggleGroup in the top bar (no footer toggle). Top bar has no bottom border.
 - Left sidebar 240px, white, 1px right border. Logo top-left. Nav items: icon + label, active item = brand tint background + brand text. "Others" group below (Pengaturan, Bantuan). Bottom: Light/Dark segmented toggle.
 - Top bar: page title left; search input with `⌘K` hint, bell with dot, avatar right.
 - Grid: 12 columns, 24px gap, max content width 1400px. Rows use only 8/4, 12, or 4/4/4 splits; every card in a row stretches to the row height (`[&>*>*]:h-full`). No 5/7 or 5/4/3 rows.

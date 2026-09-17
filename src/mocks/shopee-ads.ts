@@ -105,7 +105,7 @@ export const shopeeAdCampaigns: ShopeeAdCampaign[] = CAMPAIGN_SEEDS.map((seed) =
   diagnosis: seed.diagnosis,
 }));
 
-const DAYS = 30;
+const DAYS = 60; // 60 days so a 30-day range always has a full previous period for deltas
 
 // ponytail: mulberry32 PRNG so the 360 mock rows are stable across renders in a session
 // without a random-utils dependency; real variance comes from live Ads API in phase 4.

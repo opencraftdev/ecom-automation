@@ -153,6 +153,17 @@ function hourWeight(weekday: number, hour: number): number {
   return w;
 }
 
+// Conversion is better in the evening and at lunch, worse at night, so GMV is
+// split with a different shape than spend and hourly ROAS actually varies.
+function convWeight(weekday: number, hour: number): number {
+  let m = 0.6;
+  if (hour >= 10 && hour <= 14) m = 1.05;
+  if (hour >= 18 && hour <= 22) m = 1.35;
+  if (hour >= 1 && hour <= 6) m = 0.35;
+  if (weekday === 0 || weekday === 6) m *= hour >= 18 ? 1.1 : 0.95;
+  return hourWeight(weekday, hour) * m;
+}
+
 // Largest-remainder split: integer buckets proportional to weights that sum
 // exactly to `total` (so hourly rows always reconcile to the daily row).
 function splitByWeights(total: number, weights: number[]): number[] {
@@ -184,8 +195,9 @@ function buildHourlyRows(): ShopeeAdHourlyPerformance[] {
     const impressionByHour = splitByWeights(day.impression, weights);
     const clicksByHour = splitByWeights(day.clicks, weights);
     const expenseByHour = splitByWeights(day.expense, weights);
-    const gmvByHour = splitByWeights(day.broad_gmv, weights);
-    const orderByHour = splitByWeights(day.broad_order, weights);
+    const convWeights = Array.from({ length: 24 }, (_, hour) => convWeight(weekday, hour));
+    const gmvByHour = splitByWeights(day.broad_gmv, convWeights);
+    const orderByHour = splitByWeights(day.broad_order, convWeights);
 
     for (let hour = 0; hour < 24; hour++) {
       rows.push({

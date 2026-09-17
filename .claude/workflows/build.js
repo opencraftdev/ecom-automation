@@ -25,8 +25,10 @@ const VERDICT = { type: 'object', required: ['pass', 'issues'], properties: { pa
 
 phase('Plan')
 const plan = await agent(`Task: ${task}\nSplit into disjoint work units.`, { agentType: 'graph-engineer', schema: PLAN, effort: 'low' })
-const units = (plan && plan.units || []).slice(0, 6)
+const allUnits = plan && plan.units || []
+const units = allUnits.slice(0, 8)
 if (!units.length) throw new Error('graph-engineer returned no units')
+if (allUnits.length > units.length) log(`WARNING: dropped ${allUnits.length - units.length} unit(s) over the cap of 8: ${allUnits.slice(8).map(u => u.id).join(', ')}`)
 log(`${units.length} unit(s): ${units.map(u => `${u.id}[${u.kind}]`).join(', ')}`)
 
 const workerFor = u => u.kind === 'frontend' ? 'frontend-worker' : 'worker'

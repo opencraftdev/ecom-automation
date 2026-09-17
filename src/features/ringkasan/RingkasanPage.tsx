@@ -10,6 +10,11 @@ import { StatTiles } from "@/features/ringkasan/StatTiles"
 import { RoasSpendChart } from "@/features/ringkasan/RoasSpendChart"
 import { AttentionList } from "@/features/ringkasan/AttentionList"
 import { DateRangePicker } from "@/features/ringkasan/DateRangePicker"
+import { MetricRow } from "@/features/ringkasan/MetricRow"
+import { SpendByTypeDonut } from "@/features/ringkasan/SpendByTypeDonut"
+import { BudgetCard } from "@/features/ringkasan/BudgetCard"
+import { BestHoursHeatmap } from "@/features/ringkasan/BestHoursHeatmap"
+import { TopCampaigns } from "@/features/ringkasan/TopCampaigns"
 
 const DEFAULT_RANGE: DateRange = { from: subDays(new Date(), 29), to: new Date() }
 
@@ -83,27 +88,29 @@ export default function RingkasanPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <h1 className="text-lg font-semibold">Ringkasan</h1>
+      <div className="flex justify-end">
         <DateRangePicker value={range} onChange={setRange} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <StatTiles range={range} />
-        </div>
-        <div className="lg:col-span-7">
-          <RoasSpendChart range={range} />
-        </div>
+        <div className="lg:col-span-5"><StatTiles range={range} /></div>
+        <div className="lg:col-span-7"><RoasSpendChart range={range} /></div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <AttentionList range={range} />
-        </div>
-        <div className="lg:col-span-5">
-          <InsightRows range={range} />
-        </div>
+        <div className="lg:col-span-5"><MetricRow range={range} /></div>
+        <div className="lg:col-span-4"><SpendByTypeDonut range={range} /></div>
+        <div className="lg:col-span-3"><BudgetCard /></div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8"><BestHoursHeatmap range={range} /></div>
+        <div className="lg:col-span-4"><TopCampaigns range={range} /></div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-7"><AttentionList range={range} /></div>
+        <div className="lg:col-span-5"><InsightRows range={range} /></div>
       </div>
     </div>
   )

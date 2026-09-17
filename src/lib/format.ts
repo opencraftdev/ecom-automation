@@ -22,6 +22,15 @@ export function formatRupiah(value: number): string {
   return rupiahFormatter.format(value)
 }
 
+const rupiahCompact = new Intl.NumberFormat('id-ID', {
+  style: 'currency', currency: 'IDR', notation: 'compact', maximumFractionDigits: 1,
+})
+
+/** Axis-friendly: 2400000 -> "Rp 2,4 jt" */
+export function formatRupiahCompact(value: number): string {
+  return rupiahCompact.format(value)
+}
+
 export function formatRoas(value: number): string {
   return `${roasFormatter.format(value)}x`
 }

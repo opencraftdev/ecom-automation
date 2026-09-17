@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/empty"
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
 import { LineChart } from "lucide-react"
-import { formatRoas, formatRupiah } from "@/lib/format"
+import { formatRoas, formatRupiah, formatRupiahCompact } from "@/lib/format"
 import { useAdsDaily, type DateRange, type Granularity } from "@/api/ads"
 
 interface RoasSpendChartProps {
@@ -76,7 +78,7 @@ export function RoasSpendChart({ range }: RoasSpendChartProps) {
           </Empty>
         ) : (
           <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-            <AreaChart data={data}>
+            <AreaChart data={data} margin={{ left: 8, right: 8 }}>
               <defs>
                 <linearGradient id="fillRoas" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-roas)" stopOpacity={0.35} />
@@ -98,8 +100,26 @@ export function RoasSpendChart({ range }: RoasSpendChartProps) {
                   formatDate(parseISO(value), axisFormat, { locale: idLocale })
                 }
               />
-              <YAxis yAxisId="expense" hide />
-              <YAxis yAxisId="roas" orientation="right" hide />
+              <YAxis
+                yAxisId="roas"
+                orientation="left"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={48}
+                stroke="var(--color-roas)"
+                tickFormatter={(value: number) => formatRoas(value)}
+              />
+              <YAxis
+                yAxisId="expense"
+                orientation="right"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={64}
+                stroke="var(--color-expense)"
+                tickFormatter={(value: number) => formatRupiahCompact(value)}
+              />
               <ChartTooltip
                 cursor={false}
                 content={
@@ -127,6 +147,7 @@ export function RoasSpendChart({ range }: RoasSpendChartProps) {
                 }
               />
               <Area
+                isAnimationActive={false}
                 yAxisId="expense"
                 dataKey="expense"
                 type="natural"
@@ -134,12 +155,14 @@ export function RoasSpendChart({ range }: RoasSpendChartProps) {
                 stroke="var(--color-expense)"
               />
               <Area
+                isAnimationActive={false}
                 yAxisId="roas"
                 dataKey="roas"
                 type="natural"
                 fill="url(#fillRoas)"
                 stroke="var(--color-roas)"
               />
+              <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           </ChartContainer>
         )}

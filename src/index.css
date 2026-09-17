@@ -110,6 +110,11 @@
 }
 
 .dark {
+    /* brand hue unchanged; tints darkened so low heatmap cells and accents read on dark cards */
+    --brand-tint: #3A1F18;
+    --brand-4: #5C2A1E;
+    --brand-3: #8F3A26;
+
     --background: #0F1115;
     --foreground: #F5F6F8;
     --card: #171A21;

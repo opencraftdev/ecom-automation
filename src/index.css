@@ -104,6 +104,9 @@
     --chart-3: var(--brand-3);
     --chart-4: var(--brand-4);
     --chart-5: var(--brand-hover);
+    --hero-from: #FFF4EF;
+    --hero-via: #FFFFFF;
+    --hero-to: #FFE6DC;
     --radius: 0.875rem;
     --shadow-card: 0 1px 2px rgb(16 24 40 / 0.04), 0 12px 32px -16px rgb(16 24 40 / 0.12);
     --sidebar: #FFFFFF;
@@ -128,6 +131,9 @@
     --brand-3: #8F3A26;
 
     --background: #0F111A;
+    --hero-from: #2B1912;
+    --hero-via: #1B1A22;
+    --hero-to: #33170F;
     --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.05);
     --foreground: #F5F6F8;
     --card: #181B27;

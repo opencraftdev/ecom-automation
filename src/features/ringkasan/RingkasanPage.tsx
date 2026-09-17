@@ -34,6 +34,8 @@ export default function RingkasanPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6">
+      <Highlights range={range} />
+
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5">
@@ -62,8 +64,6 @@ export default function RingkasanPage() {
           <HourlyChart range={range} selected={selected} />
         </CardContent>
       </Card>
-
-      <Highlights range={range} />
 
       <AdList range={range} />
     </div>

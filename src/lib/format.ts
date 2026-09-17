@@ -39,3 +39,17 @@ export function formatRoas(value: number): string {
 export function formatPercent(value: number): string {
   return percentFormatter.format(value)
 }
+
+const integerFormatter = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 })
+
+/** 5378281 -> "5.378.281" */
+export function formatNumber(value: number): string {
+  return integerFormatter.format(value)
+}
+
+const compactFormatter = new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 })
+
+/** 5378281 -> "5,4 jt", 83966 -> "84 rb" */
+export function formatNumberCompact(value: number): string {
+  return compactFormatter.format(value)
+}

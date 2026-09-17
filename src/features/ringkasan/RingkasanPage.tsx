@@ -6,12 +6,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatPercent } from "@/lib/format"
 import { useAdsSummary, useAttention, useCampaigns, type DateRange } from "@/api/ads"
-import { StatTiles } from "@/features/ringkasan/StatTiles"
+import { KpiCards } from "@/features/ringkasan/KpiCards"
 import { RoasSpendChart } from "@/features/ringkasan/RoasSpendChart"
 import { AttentionList } from "@/features/ringkasan/AttentionList"
 import { DateRangePicker } from "@/features/ringkasan/DateRangePicker"
-import { MetricRow } from "@/features/ringkasan/MetricRow"
-import { SpendByTypeDonut } from "@/features/ringkasan/SpendByTypeDonut"
 import { BudgetCard } from "@/features/ringkasan/BudgetCard"
 import { BestHoursHeatmap } from "@/features/ringkasan/BestHoursHeatmap"
 import { TopCampaigns } from "@/features/ringkasan/TopCampaigns"
@@ -87,31 +85,26 @@ export default function RingkasanPage() {
   const [range, setRange] = useState<DateRange>(DEFAULT_RANGE)
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex justify-end">
+    <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">Performa iklan Shopee pada periode terpilih</p>
         <DateRangePicker value={range} onChange={setRange} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-5"><StatTiles range={range} /></div>
-        <div className="lg:col-span-7"><RoasSpendChart range={range} /></div>
-      </div>
+      <KpiCards range={range} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-5"><MetricRow range={range} /></div>
-        <div className="lg:col-span-4"><SpendByTypeDonut range={range} /></div>
-        <div className="lg:col-span-3"><BudgetCard /></div>
-      </div>
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-12 [&>*>*]:h-full">
+        <div className="lg:col-span-8"><RoasSpendChart range={range} /></div>
+        <div className="lg:col-span-4"><BudgetCard range={range} /></div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8"><BestHoursHeatmap range={range} /></div>
-        <div className="lg:col-span-4"><TopCampaigns range={range} /></div>
-      </div>
+      <BestHoursHeatmap range={range} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-7"><AttentionList range={range} /></div>
-        <div className="lg:col-span-5"><InsightRows range={range} /></div>
-      </div>
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-3 [&>*>*]:h-full">
+        <div><TopCampaigns range={range} /></div>
+        <div><AttentionList range={range} /></div>
+        <div><InsightRows range={range} /></div>
+      </section>
     </div>
   )
 }

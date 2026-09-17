@@ -6,7 +6,7 @@ Goal: a clickable demo a Shopee seller understands in 2 minutes. No auth, no bac
 
 | # | Route | Purpose | Key widgets |
 |---|---|---|---|
-| 1 | `/` Ringkasan | Health of the shop's ads in one glance | 4 stat tiles (ROAS, Spend, Revenue, Orders) with 7d delta · ROAS vs Spend line chart (30d) · "Perlu perhatian" list: top 3 products losing money · date-range picker |
+| 1 | `/` Ringkasan | Health of the shop's ads in one glance | Fixed 12-col grid, rows: (1) 4 KPI cards, each primary metric + 7d delta + paired efficiency metric (ROAS/CTR, Spend/CPC, Revenue/impressions, Orders/clicks); (2) ROAS vs Spend dual-axis area chart (8) + Budget card with Produk/Toko allocation bars (4); (3) best-hours heatmap full width; (4) Top campaigns, Perlu perhatian, Wawasan at 4/4/4. Date-range picker in the page toolbar |
 | 2 | `/iklan` Iklan | Campaign table | Sortable table: campaign, status, spend, GMV, ROAS, CTR, CPC · filter status/type · row click → drawer with daily chart |
 | 3 | `/produk` Review Produk | Catalogue reviewer | Card grid or table per product: image, name, spend, ROAS, verdict badge (Naikkan / Tahan / Turunkan / Perbaiki listing) with one-line reason · filter by verdict |
 | 4 | `/chat` Konsultan AI | AI marketing chat | Thread list left · messages right · answer shows citation chips (e-book chapter) and inline metric chips (pulled from shop data) · 3 suggested prompts on empty state |
@@ -71,7 +71,7 @@ References: `docs/plan/refs/ref-1-bankly.png`, `docs/plan/refs/ref-2-gotics.png`
 - Page background light gray; content in white cards, 1px border, radius 16px, no heavy shadow.
 - Left sidebar 240px, white, 1px right border. Logo top-left. Nav items: icon + label, active item = brand tint background + brand text. "Others" group below (Pengaturan, Bantuan). Bottom: Light/Dark segmented toggle.
 - Top bar: page title left; search input with `⌘K` hint, bell with dot, avatar right.
-- Grid: 12 columns, 24px gap. Overview = 2×2 stat tiles in one card (left, 5 cols) + hero chart card (right, 7 cols); below: wide line chart (8 cols) + donut card (4 cols).
+- Grid: 12 columns, 24px gap, max content width 1400px. Rows use only 8/4, 12, or 4/4/4 splits; every card in a row stretches to the row height (`[&>*>*]:h-full`). No 5/7 or 5/4/3 rows.
 - Mobile: sidebar collapses to bottom tab bar, cards stack.
 
 ### Components as seen in refs

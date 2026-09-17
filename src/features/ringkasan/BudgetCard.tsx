@@ -11,12 +11,24 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty"
-import { formatPercent, formatRupiah } from "@/lib/format"
-import { useBudget } from "@/api/ads"
+import { formatPercent, formatRoas, formatRupiah } from "@/lib/format"
+import { useBudget, useSpendByType, type DateRange } from "@/api/ads"
 
-// F1.7: monthly budget card, spent vs budget, like ref-1 "Monthly Budget".
-export function BudgetCard() {
+interface BudgetCardProps {
+  range: DateRange
+}
+
+// F1.7: monthly budget (spent vs budget, like ref-1 "Monthly Budget") plus the
+// Produk/Toko spend split as two bars — one card, no donut, fits beside the chart.
+export function BudgetCard({ range }: BudgetCardProps) {
   const { data, isPending, isError } = useBudget()
+  const { data: split } = useSpendByType(range)
+  const allocation = split
+    ? [
+        { key: "product", label: "Iklan Produk", ...split.product },
+        { key: "shop", label: "Iklan Toko", ...split.shop },
+      ]
+    : []
 
   const isEmpty = !!data && data.budget === 0
   const overBudget = !!data && data.remaining < 0
@@ -62,6 +74,29 @@ export function BudgetCard() {
               <span className={cn("font-medium", overBudget && "text-danger")}>
                 Sisa {formatRupiah(data.remaining)}
               </span>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-3 border-t pt-4">
+              <span className="text-sm font-medium">Alokasi pengeluaran</span>
+              {allocation.map((row) => {
+                const share = split && split.total.spend > 0 ? row.spend / split.total.spend : 0
+                return (
+                  <div key={row.key} className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{row.label}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatRupiah(row.spend)} · ROAS {formatRoas(row.roas)}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-brand-tint">
+                      <div
+                        className={cn("h-full rounded-full", row.key === "product" ? "bg-brand" : "bg-brand-2")}
+                        style={{ width: `${Math.round(share * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

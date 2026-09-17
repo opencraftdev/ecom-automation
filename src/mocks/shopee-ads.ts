@@ -125,3 +125,98 @@ function buildRows(): ShopeeAdDailyPerformance[] {
 
 // mock: replace in phase 4 — 12 campaigns x 30 days = 360 rows
 export const shopeeAdsDaily: ShopeeAdDailyPerformance[] = buildRows();
+
+export interface ShopeeAdHourlyPerformance {
+  campaign_id: string;
+  date: string; // YYYY-MM-DD
+  hour: number; // 0-23
+  impression: number;
+  clicks: number;
+  expense: number; // IDR
+  broad_gmv: number; // IDR
+  broad_order: number;
+}
+
+// Base 24h shape: low 1-6 (dawn), peaks 11-13 (lunch) and 19-22 (evening browse).
+const HOUR_PROFILE = [
+  3, 1, 1, 1, 1, 1, 2, 4, 6, 7, 8, 10, 11, 10, 7, 6, 6, 7, 9, 11, 12, 11, 9, 5,
+];
+
+// ponytail: weekday tilt is a flat multiplier on the two peak windows (weekend
+// evening browsing up, weekday lunch-break spike up) rather than a full 7x24
+// table — good enough for mock shape; revisit if a real weekday effect is needed.
+function hourWeight(weekday: number, hour: number): number {
+  const isWeekend = weekday === 0 || weekday === 6; // Date#getDay(): 0=Sun..6=Sat
+  let w = HOUR_PROFILE[hour];
+  if (hour >= 11 && hour <= 13) w *= isWeekend ? 0.85 : 1.1;
+  if (hour >= 19 && hour <= 22) w *= isWeekend ? 1.2 : 1.0;
+  return w;
+}
+
+// Largest-remainder split: integer buckets proportional to weights that sum
+// exactly to `total` (so hourly rows always reconcile to the daily row).
+function splitByWeights(total: number, weights: number[]): number[] {
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  if (sumW <= 0 || total === 0) return weights.map(() => 0);
+
+  const raw = weights.map((w) => (total * w) / sumW);
+  const floors = raw.map(Math.floor);
+  let remainder = total - floors.reduce((a, b) => a + b, 0);
+
+  const order = raw
+    .map((v, i) => ({ i, frac: v - floors[i] }))
+    .sort((a, b) => b.frac - a.frac);
+
+  const result = [...floors];
+  for (let k = 0; k < order.length && remainder > 0; k++, remainder--) {
+    result[order[k].i] += 1;
+  }
+  return result;
+}
+
+function buildHourlyRows(): ShopeeAdHourlyPerformance[] {
+  const rows: ShopeeAdHourlyPerformance[] = [];
+
+  for (const day of shopeeAdsDaily) {
+    const weekday = new Date(day.date).getDay();
+    const weights = Array.from({ length: 24 }, (_, hour) => hourWeight(weekday, hour));
+
+    const impressionByHour = splitByWeights(day.impression, weights);
+    const clicksByHour = splitByWeights(day.clicks, weights);
+    const expenseByHour = splitByWeights(day.expense, weights);
+    const gmvByHour = splitByWeights(day.broad_gmv, weights);
+    const orderByHour = splitByWeights(day.broad_order, weights);
+
+    for (let hour = 0; hour < 24; hour++) {
+      rows.push({
+        campaign_id: day.campaign_id,
+        date: day.date,
+        hour,
+        impression: impressionByHour[hour],
+        clicks: clicksByHour[hour],
+        expense: expenseByHour[hour],
+        broad_gmv: gmvByHour[hour],
+        broad_order: orderByHour[hour],
+      });
+    }
+  }
+
+  return rows;
+}
+
+// mock: replace in phase 4 — 24h split of each shopeeAdsDaily row, weekday×hour weighted
+export const shopeeAdsHourly: ShopeeAdHourlyPerformance[] = buildHourlyRows();
+
+export interface ShopeeMonthlyBudget {
+  month: string; // YYYY-MM
+  budget: number; // IDR
+}
+
+// mock: replace in phase 4 — budget sized so this month's actual spend lands ~85% used
+export const shopeeMonthlyBudget: ShopeeMonthlyBudget = (() => {
+  const month = new Date().toISOString().slice(0, 7);
+  const monthExpense = shopeeAdsDaily
+    .filter((r) => r.date.startsWith(month))
+    .reduce((sum, r) => sum + r.expense, 0);
+  return { month, budget: Math.round(monthExpense * 1.15) };
+})();
